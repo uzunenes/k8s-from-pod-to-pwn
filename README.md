@@ -17,16 +17,17 @@ This repository contains the **lab scenarios** accompanying the blog/post series
 
 ## Prerequisites
 
-- A Kubernetes environment (local setup recommended):
-  - [k3s](https://k3s.io/) ✅ Recommended (NetworkPolicy support out of the box)
-  - or [kind](https://kind.sigs.k8s.io/)
-  - or [minikube](https://minikube.sigs.k8s.io/docs/)
+- A Kubernetes environment:
+  - [k3s](https://k3s.io/) - Tested and verified (v1.33.6+k3s1)
+  - NetworkPolicy support included out of the box (kube-router)
 - `kubectl` installed and connected to the cluster
-- Familiarity with basic Linux and bash commands
+- Basic understanding of Linux command line
+
+> ℹ️ **Note:** This lab was fully tested on **k3s v1.33.6+k3s1** running on a GCP VM (Ubuntu 22.04). All attack and defense scenarios have been verified to work correctly.
 
 This repo is designed for a **single user / single machine** scenario.
 
-## Quickstart (Local)
+## Quickstart
 
 1. Clone the repo:
 
@@ -35,10 +36,18 @@ This repo is designed for a **single user / single machine** scenario.
    cd k8s-from-pod-to-pwn
    ```
 
-2. Start a local cluster (e.g., using kind):
+2. Install k3s (if not already installed):
 
    ```bash
-   kind create cluster --name battleground
+   curl -sfL https://get.k3s.io | sh -
+   
+   # Configure kubectl
+   mkdir -p ~/.kube
+   sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+   sudo chown $(id -u):$(id -g) ~/.kube/config
+   
+   # Verify
+   kubectl get nodes
    ```
 
 3. Deploy the Episode 1 lab:
@@ -76,9 +85,7 @@ gcloud compute instances create k8s-from-pod-to-pwn-vm \
 gcloud compute ssh ubuntu@k8s-from-pod-to-pwn-vm --zone=europe-west1-b
 ```
 
-**3. Install Kubernetes (choose one option):**
-
-### Option A: k3s (Recommended - NetworkPolicy works out of the box)
+**3. Install k3s:**
 
 ```bash
 # Install k3s
@@ -95,32 +102,7 @@ kubectl get nodes
 
 > ✅ **k3s v1.33+** includes kube-router which provides **NetworkPolicy support by default**.
 
-### Option B: Kind (simpler, but no NetworkPolicy support)
-
-```bash
-# Update system & install tools
-sudo apt update && sudo apt install -y docker.io kubectl git
-
-# Enable Docker
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"
-
-# Install kind
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
-chmod +x ./kind
-sudo mv ./kind /usr/local/bin/kind
-
-# Log out and log back in for group changes
-exit
-```
-
-After reconnecting:
-
-```bash
-kind create cluster --name battleground
-```
-
-> ⚠️ **Note:** Kind's default CNI (kindnet) does **NOT** support NetworkPolicy. Defense scenarios using NetworkPolicy won't work unless you install Calico or Cilium.
+> ⚠️ **Tested:** Kind's default CNI (kindnet) does **NOT** support NetworkPolicy. Defense scenarios using NetworkPolicy won't work on Kind unless you install Calico or Cilium.
 
 **4. Start the Lab:**
 
