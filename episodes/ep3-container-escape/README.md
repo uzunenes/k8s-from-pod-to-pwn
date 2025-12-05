@@ -68,15 +68,13 @@ Check where you are:
 
 ```bash
 hostname
-# Output: battleground-control-plane (The Node's name!)
+# Output: <your-node-name> (e.g., k8s-from-pod-to-pwn-vm or kind-control-plane)
 
 cat /etc/os-release
-# Output: Debian GNU/Linux 12 (bookworm) (The Node's OS!)
+# Output: The Node's OS (Ubuntu, Debian, etc.)
 ```
 
 Run `ls /` and you will see the host's filesystem. You are now `root` on the Kubernetes Node.
-
-Run `hostname`, `ls /`, or `whoami`. You are now `root` on the Kubernetes Node.
 
 ### 3.3. Alternative: Mounting the Host Disk
 
@@ -125,6 +123,47 @@ Check the `defense/` folder for secure examples.
 
 **Try it out:**
 ```bash
-kubectl apply -f episodes/ep3-container-escape/defense/
+kubectl apply -f episodes/ep3-container-escape/defense/secure-deployment.yaml
 ```
+
+### 6.1. Verifying the Defense
+
+**Test 1: Cannot See Host Processes**
+```bash
+kubectl -n battleground exec deploy/secure-app -- ps aux
+```
+
+**Expected Output:**
+```
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.1  0.0   2696  1408 ?        Ss   12:20   0:00 /bin/sleep 3600
+root           7  0.0  0.0   7888  3968 ?        Rs   12:20   0:00 ps aux
+```
+Only container processes are visible, not host processes like `k3s-server` or `kubelet`.
+
+**Test 2: nsenter Should Fail**
+```bash
+kubectl -n battleground exec deploy/secure-app -- \
+  nsenter --target 1 --mount --uts --ipc --net --pid -- hostname
+```
+
+**Expected Output:**
+```
+nsenter: reassociate to namespace 'ns/ipc' failed: Operation not permitted
+```
+
+**Test 3: All Capabilities Dropped**
+```bash
+kubectl -n battleground exec deploy/secure-app -- cat /proc/1/status | grep -i cap
+```
+
+**Expected Output:**
+```
+CapInh: 0000000000000000
+CapPrm: 0000000000000000
+CapEff: 0000000000000000
+CapBnd: 0000000000000000
+CapAmb: 0000000000000000
+```
+All capabilities are zeroed out, meaning no special privileges.
 
