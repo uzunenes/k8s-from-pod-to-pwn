@@ -14,10 +14,10 @@ We are currently focusing on:
 
 1. **[Ep1 – I've Landed in a Pod](episodes/ep1-landed-in-a-pod/README.md)**: Env vars, ServiceAccount token, basic API discovery.
 2. **[Ep2 – The RBAC Mistake](episodes/ep2-rbac-misconfig/README.md)**: Exploiting overly permissive Roles to steal Secrets.
+3. **[Ep3 – Breakout (Container Escape)](episodes/ep3-container-escape/README.md)**: Abusing `privileged` contexts, `hostPath` mounts, and `CAP_SYS_ADMIN` to escape to the host Node.
 
 **Upcoming Advanced Scenarios:**
 
-3. **Ep3 – Breakout (Container Escape)**: Abusing `privileged` contexts, `hostPath` mounts, and `CAP_SYS_ADMIN` to escape to the host Node.
 4. **Ep4 – Node Domination**: Post-exploitation on the Node. Stealing Kubelet credentials, accessing host filesystem, and persistence via Cron/SSH.
 5. **Ep5 – Cloud Lateral Movement**: Abusing Cloud Metadata (IMDS) to steal IAM credentials and pivot from Kubernetes to the Cloud Provider (AWS/GCP).
 6. **Ep6 – Silent Persistence**: Backdooring Admission Controllers or mutating webhooks to inject sidecars silently.
