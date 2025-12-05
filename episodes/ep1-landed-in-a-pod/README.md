@@ -99,7 +99,7 @@ echo $APISERVER
 ```sh
 curl --cacert "$CACERT" \
   -H "Authorization: Bearer $TOKEN" \
-  "$APISERVER/"
+  "$APISERVER/api"
 ```
 
 You should see the API versions and paths.
@@ -189,7 +189,7 @@ Some preventive measures at this stage:
 
 In Ep2, we will explore **what this ServiceAccount is allowed to do** and how to escalate privileges from here.
 
-## 6. Blue Team Corner (Defense in Depth) 🛡️
+## 7. Blue Team Corner (Defense in Depth) 🛡️
 
 We have added a `defense/` folder with secure configurations to prevent these issues.
 
@@ -197,6 +197,7 @@ We have added a `defense/` folder with secure configurations to prevent these is
     - Disables ServiceAccount token mounting (`automountServiceAccountToken: false`).
     - Runs as non-root user (`runAsNonRoot: true`).
     - Drops all Linux capabilities.
+    - Uses read-only root filesystem.
 
 2.  **Network Policy (`defense/network-policy.yaml`):**
     - Denies all ingress traffic (since this is an internal app).
@@ -209,4 +210,63 @@ We have added a `defense/` folder with secure configurations to prevent these is
 ```bash
 kubectl apply -f episodes/ep1-landed-in-a-pod/defense/
 ```
+
+### 7.1. Verifying the Defense
+
+After applying the secure deployment, verify the protections:
+
+**Test 1: ServiceAccount Token Not Mounted**
+```bash
+kubectl -n battleground exec deploy/demo-app-secure -- ls /var/run/secrets/kubernetes.io/serviceaccount/
+```
+
+**Expected Output:**
+```
+ls: cannot access '/var/run/secrets/kubernetes.io/serviceaccount/': No such file or directory
+```
+
+**Test 2: Running as Non-Root User**
+```bash
+kubectl -n battleground exec deploy/demo-app-secure -- id
+```
+
+**Expected Output:**
+```
+uid=10001 gid=0(root) groups=0(root)
+```
+
+**Test 3: Read-Only Filesystem**
+```bash
+kubectl -n battleground exec deploy/demo-app-secure -- touch /test-file
+```
+
+**Expected Output:**
+```
+touch: cannot touch '/test-file': Read-only file system
+```
+
+**Test 4: API Access Without Token**
+```bash
+kubectl -n battleground exec deploy/demo-app-secure -- \
+  sh -c 'curl -s -k https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT/api'
+```
+
+**Expected Output:**
+```json
+{
+  "kind": "Status",
+  "status": "Failure",
+  "message": "forbidden: User \"system:anonymous\" cannot get path \"/api\"",
+  "reason": "Forbidden",
+  "code": 403
+}
+```
+
+> ⚠️ **Important Note about NetworkPolicy:**
+> The NetworkPolicy will only work if your CNI plugin supports it. **Kind's default CNI (kindnet) does NOT support NetworkPolicy**. For production or proper testing, use Calico, Cilium, or Weave Net.
+>
+> To install Calico on Kind:
+> ```bash
+> kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+> ```
 

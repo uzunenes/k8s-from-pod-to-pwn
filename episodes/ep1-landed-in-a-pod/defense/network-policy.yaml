@@ -4,7 +4,9 @@ metadata:
   name: default-deny-all
   namespace: battleground
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app: demo-app-secure  # Only apply to secure pods, not entire namespace
   policyTypes:
   - Ingress
   - Egress

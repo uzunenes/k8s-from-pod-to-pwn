@@ -84,7 +84,26 @@ gcloud compute instances create k8s-from-pod-to-pwn-vm \
 gcloud compute ssh ubuntu@k8s-from-pod-to-pwn-vm --zone=europe-west1-b
 ```
 
-**3. Install dependencies (inside VM):**
+**3. Install Kubernetes (choose one option):**
+
+### Option A: k3s (Recommended - NetworkPolicy works out of the box)
+
+```bash
+# Install k3s
+curl -sfL https://get.k3s.io | sh -
+
+# Configure kubectl
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $(id -u):$(id -g) ~/.kube/config
+
+# Verify
+kubectl get nodes
+```
+
+> ✅ **k3s v1.33+** includes kube-router which provides **NetworkPolicy support by default**.
+
+### Option B: Kind (simpler, but no NetworkPolicy support)
 
 ```bash
 # Update system & install tools
@@ -99,17 +118,21 @@ curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
 chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 
-# Log out and log back in for group changes to take effect
+# Log out and log back in for group changes
 exit
 ```
 
-**4. Start the Lab (inside VM):**
-
-Reconnect via SSH, then:
+After reconnecting:
 
 ```bash
 kind create cluster --name battleground
+```
 
+> ⚠️ **Note:** Kind's default CNI (kindnet) does **NOT** support NetworkPolicy. Defense scenarios using NetworkPolicy won't work unless you install Calico or Cilium.
+
+**4. Start the Lab:**
+
+```bash
 git clone https://github.com/uzunenes/k8s-from-pod-to-pwn.git
 cd k8s-from-pod-to-pwn
 
