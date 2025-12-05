@@ -104,6 +104,23 @@ curl --cacert "$CACERT" \
 
 You should see the API versions and paths.
 
+**Example Output:**
+
+```json
+{
+  "kind": "APIVersions",
+  "versions": [
+    "v1"
+  ],
+  "serverAddressByClientCIDRs": [
+    {
+      "clientCIDR": "0.0.0.0/0",
+      "serverAddress": "172.18.0.2:6443"
+    }
+  ]
+}
+```
+
 ### 4.2. What's in My Namespace?
 
 ```sh
@@ -120,6 +137,25 @@ If this call is successful:
 
 - You can list pods in your own namespace
 - You know you are "not alone"
+
+**However, in a secure default environment (like this lab), you will likely see:**
+
+```json
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {},
+  "status": "Failure",
+  "message": "pods is forbidden: User \"system:serviceaccount:battleground:default\" cannot list resource \"pods\" in API group \"\" in the namespace \"battleground\"",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "pods"
+  },
+  "code": 403
+}
+```
+
+This confirms that the default ServiceAccount has no permissions to list pods.
 
 ## 5. Attack: Where Do I Go From Here?
 
