@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: net-spy
+  namespace: battleground
+  labels:
+    app: net-spy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: net-spy
+  template:
+    metadata:
+      labels:
+        app: net-spy
+    spec:
+      hostNetwork: true
+      containers:
+      - name: net-spy
+        image: ubuntu:latest
+        command: ["/bin/sleep", "3600"]
