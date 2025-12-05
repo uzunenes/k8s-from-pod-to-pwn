@@ -19,8 +19,9 @@ We are currently focusing on:
 **Upcoming Advanced Scenarios:**
 
 4. **Ep4 – Node Domination**: Post-exploitation on the Node. Stealing Kubelet credentials, accessing host filesystem, and persistence via Cron/SSH.
-5. **Ep5 – Cloud Lateral Movement**: Abusing Cloud Metadata (IMDS) to steal IAM credentials and pivot from Kubernetes to the Cloud Provider (AWS/GCP).
-6. **Ep6 – Silent Persistence**: Backdooring Admission Controllers or mutating webhooks to inject sidecars silently.
+5. **Ep5 – The HostNetwork Highway**: Abusing `hostNetwork: true` to bypass NetworkPolicies, sniff traffic, and access localhost services (Kubelet API).
+6. **Ep6 – Cloud Lateral Movement**: Abusing Cloud Metadata (IMDS) to steal IAM credentials and pivot from Kubernetes to the Cloud Provider (AWS/GCP).
+7. **Ep7 – Silent Persistence**: Backdooring Admission Controllers or mutating webhooks to inject sidecars silently.
 
 ## Prerequisites
 
