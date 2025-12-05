@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: privileged-app
+  namespace: battleground
+  labels:
+    app: privileged-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: privileged-app
+  template:
+    metadata:
+      labels:
+        app: privileged-app
+    spec:
+      hostPID: true
+      containers:
+      - name: privileged-app
+        image: ubuntu:latest
+        command: ["/bin/sleep", "3600"]
+        securityContext:
+          privileged: true
