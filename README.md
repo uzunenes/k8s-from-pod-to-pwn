@@ -12,8 +12,9 @@ This repository contains the **lab scenarios** accompanying the blog/post series
 
 We are currently focusing on:
 
-1. **Ep1 – I've Landed in a Pod**: Env vars, ServiceAccount token, basic API discovery.
-2. **Ep2 – What Am I Allowed To Do?** (Coming Soon): RBAC, SelfSubjectAccessReview, privilege escalation.
+1. **[Ep1 – I've Landed in a Pod](episodes/ep1-landed-in-a-pod/README.md)**: Env vars, ServiceAccount token, basic API discovery.
+2. **[Ep2 – The RBAC Mistake](episodes/ep2-rbac-misconfig/README.md)**: Exploiting overly permissive Roles to steal Secrets.
+3. **Ep3 – Token Mounting** (Coming Soon): ServiceAccount Token Projection and volume mounts.
 
 Future episodes will cover lateral movement, node access, cloud metadata abuse, and persistence.
 

