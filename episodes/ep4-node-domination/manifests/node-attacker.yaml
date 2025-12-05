@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-attacker
+  namespace: battleground
+  labels:
+    app: node-attacker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-attacker
+  template:
+    metadata:
+      labels:
+        app: node-attacker
+    spec:
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - name: node-attacker
+        image: ubuntu:latest
+        command: ["/bin/sleep", "3600"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /host
+          name: host-root
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+          type: Directory
