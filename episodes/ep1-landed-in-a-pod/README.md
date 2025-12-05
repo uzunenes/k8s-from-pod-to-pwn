@@ -23,7 +23,7 @@ kubectl apply -f episodes/ep1-landed-in-a-pod/manifests/
 This command:
 
 - Creates a namespace named `battleground`
-- Deploys a simple `busybox`-based Deployment named `demo-app`
+- Deploys a simple `nginx`-based Deployment named `demo-app`
 
 Check the pod status:
 
