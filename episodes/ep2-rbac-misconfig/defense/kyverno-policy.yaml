@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-secret-access
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: block-secret-access-in-roles
+    match:
+      any:
+      - resources:
+          kinds:
+          - Role
+          - ClusterRole
+    validate:
+      message: "Roles granting access to Secrets are restricted."
+      pattern:
+        rules:
+        - resources: ["!secrets"]

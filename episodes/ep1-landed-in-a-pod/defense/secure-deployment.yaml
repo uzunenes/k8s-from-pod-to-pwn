@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-secure
+  namespace: battleground
+  labels:
+    app: demo-app-secure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app-secure
+  template:
+    metadata:
+      labels:
+        app: demo-app-secure
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false # 1. Prevent mounting the SA token
+      securityContext:
+        runAsNonRoot: true            # 2. Must not run as root
+        runAsUser: 10001              # 3. Specific UID
+        seccompProfile:
+          type: RuntimeDefault        # 4. Restrict syscalls
+      containers:
+        - name: demo-app
+          image: nginxinc/nginx-unprivileged:latest # Use unprivileged image
+          securityContext:
+            allowPrivilegeEscalation: false # 5. No setuid binaries
+            readOnlyRootFilesystem: true    # 6. Immutable container
+            capabilities:
+              drop: ["ALL"]                 # 7. Drop all Linux capabilities
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /tmp               # Nginx needs writable tmp
+              name: tmp-volume
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

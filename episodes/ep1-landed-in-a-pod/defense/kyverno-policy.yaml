@@ -1,0 +1,19 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-service-account-token
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: require-automount-service-account-token-false
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: "Mounting ServiceAccount tokens is forbidden unless necessary."
+      pattern:
+        spec:
+          automountServiceAccountToken: false

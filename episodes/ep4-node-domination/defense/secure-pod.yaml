@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-node-app
+  namespace: battleground
+  labels:
+    app: secure-node-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-node-app
+  template:
+    metadata:
+      labels:
+        app: secure-node-app
+    spec:
+      hostPID: false
+      hostNetwork: false
+      containers:
+      - name: secure-node-app
+        image: ubuntu:latest
+        command: ["/bin/sleep", "3600"]
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        # No hostPath volume mounts
+      # No hostPath volumes

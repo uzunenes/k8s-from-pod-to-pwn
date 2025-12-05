@@ -186,3 +186,22 @@ The best defense is to prevent the attacker from getting `root` on the node in t
 - **Runtime Security:** Use tools like **Falco** or **Tetragon** to detect unexpected file writes to sensitive paths (like `/run/containerd/...`).
 - **Immutable Infrastructure:** Treat nodes as immutable. If a node is compromised, kill it and replace it. Don't try to clean it.
 
+## 5. Blue Team Corner (Defense in Depth) 🛡️
+
+Check the `defense/` folder for secure examples.
+
+1.  **Secure Pod (`defense/secure-pod.yaml`):**
+    - Removes `hostPath` mounts, which prevents access to the host filesystem.
+    - Removes `hostPID` and `hostNetwork`, preventing namespace breakouts.
+    - Sets `readOnlyRootFilesystem: true` to make persistence harder.
+
+2.  **Policy as Code (`defense/kyverno-policy.yaml`):**
+    - A Kyverno policy that specifically blocks `hostPath` volumes.
+    - This single rule would have prevented the initial "Looting the Node" step.
+
+**Try it out:**
+```bash
+kubectl apply -f episodes/ep4-node-domination/defense/
+```
+
+

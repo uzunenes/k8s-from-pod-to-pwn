@@ -126,3 +126,21 @@ If `base64` is missing, you can use `openssl` (if available) or just copy the st
 - **Never** grant `list` or `get` on `secrets` unless absolutely necessary.
 - If an app needs a specific secret, mount it as a volume or environment variable. **Do not** give API access to secrets.
 - Use tools like **Kyverno** or **OPA Gatekeeper** to audit and block overly permissive roles.
+
+## 5. Blue Team Corner (Defense in Depth) 🛡️
+
+Check the `defense/` folder for secure examples.
+
+1.  **Secure RBAC (`defense/secure-rbac.yaml`):**
+    - A Role that only allows `get/list` on `pods`, explicitly excluding `secrets`.
+    - This follows the Principle of Least Privilege.
+
+2.  **Policy as Code (`defense/kyverno-policy.yaml`):**
+    - A Kyverno policy that **audits or blocks** any Role/ClusterRole that grants access to `secrets`.
+    - This prevents developers from accidentally (or maliciously) creating unsafe roles.
+
+**Try it out:**
+```bash
+kubectl apply -f episodes/ep2-rbac-misconfig/defense/
+```
+

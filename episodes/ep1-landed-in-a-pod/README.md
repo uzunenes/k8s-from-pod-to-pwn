@@ -188,3 +188,25 @@ Some preventive measures at this stage:
   - Or external secret management (Vault, KMS, etc.) instead of env vars
 
 In Ep2, we will explore **what this ServiceAccount is allowed to do** and how to escalate privileges from here.
+
+## 6. Blue Team Corner (Defense in Depth) 🛡️
+
+We have added a `defense/` folder with secure configurations to prevent these issues.
+
+1.  **Secure Deployment (`defense/secure-deployment.yaml`):**
+    - Disables ServiceAccount token mounting (`automountServiceAccountToken: false`).
+    - Runs as non-root user (`runAsNonRoot: true`).
+    - Drops all Linux capabilities.
+
+2.  **Network Policy (`defense/network-policy.yaml`):**
+    - Denies all ingress traffic (since this is an internal app).
+    - Allows egress only to DNS (UDP 53), blocking access to the API Server or external C2 servers.
+
+3.  **Policy as Code (`defense/kyverno-policy.yaml`):**
+    - A Kyverno policy that enforces `automountServiceAccountToken: false` for all pods.
+
+**Try it out:**
+```bash
+kubectl apply -f episodes/ep1-landed-in-a-pod/defense/
+```
+

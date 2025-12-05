@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  namespace: battleground
+  labels:
+    app: secure-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-app
+  template:
+    metadata:
+      labels:
+        app: secure-app
+    spec:
+      hostPID: false # Disabled
+      containers:
+      - name: secure-app
+        image: ubuntu:latest
+        command: ["/bin/sleep", "3600"]
+        securityContext:
+          privileged: false # Disabled
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault

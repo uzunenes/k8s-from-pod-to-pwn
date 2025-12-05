@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: battleground
+  name: pod-reader-only
+rules:
+- apiGroups: [""]
+  resources: ["pods"] # Only allow reading Pods, NOT Secrets
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods-binding
+  namespace: battleground
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: battleground
+roleRef:
+  kind: Role
+  name: pod-reader-only
+  apiGroup: rbac.authorization.k8s.io

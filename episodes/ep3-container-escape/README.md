@@ -109,3 +109,22 @@ Once you are on the Node:
 - **Policy:** Enforce **Pod Security Standards (PSS)**. Disallow `privileged` containers in the "Restricted" or "Baseline" policies.
 - **Gatekeeper/Kyverno:** Block pods with `securityContext.privileged: true`.
 - **Least Privilege:** If an app needs hardware access, grant specific capabilities (`cap_add`) instead of full privilege.
+
+## 6. Blue Team Corner (Defense in Depth) 🛡️
+
+Check the `defense/` folder for secure examples.
+
+1.  **Secure Deployment (`defense/secure-deployment.yaml`):**
+    - Removes `privileged: true` and `hostPID: true`.
+    - Adds `seccompProfile: RuntimeDefault` to restrict system calls.
+    - Drops all capabilities.
+
+2.  **Policy as Code (`defense/kyverno-policy.yaml`):**
+    - A Kyverno policy that strictly forbids `privileged` containers and `hostPID` access.
+    - This effectively neutralizes the attack vector used in this episode.
+
+**Try it out:**
+```bash
+kubectl apply -f episodes/ep3-container-escape/defense/
+```
+
