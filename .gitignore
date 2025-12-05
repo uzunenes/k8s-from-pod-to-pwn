@@ -1,0 +1,21 @@
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Terraform / Cloud
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Secrets (just in case)
+secrets.yaml
+*.key
+*.pem
+google-cloud-sdk/
+google-cloud-cli-*.tar.gz
