@@ -60,11 +60,20 @@ The Kubelet's credentials allow it to:
 
 Since `cron` and `sshd` might not be installed on minimal container-optimized OS nodes (like Kind nodes), a more reliable and **Kubernetes-native** persistence method is creating a **Static Pod**.
 
-The Kubelet automatically watches the `/etc/kubernetes/manifests/` directory. If we drop a pod manifest there, the Kubelet will start it and keep it running (even if the API server is down!).
+The Kubelet automatically watches the manifests directory. If we drop a pod manifest there, the Kubelet will start it and keep it running (even if the API server is down!).
+
+> **Note:** The path varies by distribution:
+> - **kubeadm/Kind:** `/etc/kubernetes/manifests/`
+> - **k3s:** `/var/lib/rancher/k3s/server/manifests/`
 
 ```bash
 # Create a malicious static pod manifest
+# For kubeadm/Kind:
 cat <<EOF > /host/etc/kubernetes/manifests/backdoor.yaml
+
+# For k3s:
+cat <<EOF > /host/var/lib/rancher/k3s/server/manifests/backdoor.yaml
+
 apiVersion: v1
 kind: Pod
 metadata:
@@ -201,7 +210,43 @@ Check the `defense/` folder for secure examples.
 
 **Try it out:**
 ```bash
-kubectl apply -f episodes/ep4-node-domination/defense/
+kubectl apply -f episodes/ep4-node-domination/defense/secure-pod.yaml
+```
+
+### 5.1. Verifying the Defense
+
+**Test 1: No Host Filesystem Access**
+```bash
+kubectl -n battleground exec deploy/secure-node-app -- ls /host
+```
+
+**Expected Output:**
+```
+ls: cannot access '/host': No such file or directory
+```
+
+**Test 2: Cannot See Host Processes**
+```bash
+kubectl -n battleground exec deploy/secure-node-app -- ps aux
+```
+
+**Expected Output:**
+```
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0   2696  1408 ?        Ss   12:25   0:00 /bin/sleep 3600
+root          13  0.0  0.0   7888  3968 ?        Rs   12:25   0:00 ps aux
+```
+Only container processes visible, not host processes.
+
+**Test 3: nsenter Should Fail**
+```bash
+kubectl -n battleground exec deploy/secure-node-app -- \
+  nsenter --target 1 --mount -- hostname
+```
+
+**Expected Output:**
+```
+nsenter: reassociate to namespace 'ns/mnt' failed: Operation not permitted
 ```
 
 
