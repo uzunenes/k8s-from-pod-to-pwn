@@ -118,3 +118,32 @@ kubectl -n battleground exec -it deploy/demo-app -- sh
 
 - All examples are for **educational and awareness purposes only**.
 - Default settings in this lab are intentionally weakened to demonstrate risks. Do not use these configurations in production.
+
+## Optional: Policy Enforcement with Kyverno
+
+Each episode includes a `defense/kyverno-policy.yaml` for cluster-wide policy enforcement.
+
+> ⚠️ **Note:** Install Kyverno **after** testing the attack scenarios. Once policies are active, attack pods (privileged, hostPath, etc.) will be blocked at creation time.
+
+```bash
+# Install Kyverno
+kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.13.0/install.yaml
+
+# Wait for pods
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=kyverno -n kyverno --timeout=120s
+
+# Apply all policies
+kubectl apply -f episodes/ep1-landed-in-a-pod/defense/kyverno-policy.yaml
+kubectl apply -f episodes/ep2-rbac-misconfig/defense/kyverno-policy.yaml
+kubectl apply -f episodes/ep3-container-escape/defense/kyverno-policy.yaml
+kubectl apply -f episodes/ep4-node-domination/defense/kyverno-policy.yaml
+
+# Verify
+kubectl get clusterpolicy
+```
+
+**What gets blocked:**
+- `restrict-service-account-token` – Blocks pods that mount SA tokens
+- `restrict-secret-access` – Audits Roles granting Secret access
+- `disallow-privileged-containers` – Blocks privileged + hostPID
+- `disallow-host-path` – Blocks hostPath volume mounts
