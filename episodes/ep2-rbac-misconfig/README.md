@@ -141,6 +141,55 @@ Check the `defense/` folder for secure examples.
 
 **Try it out:**
 ```bash
-kubectl apply -f episodes/ep2-rbac-misconfig/defense/
+# First, remove the insecure RBAC
+kubectl delete role secret-reader -n battleground
+kubectl delete rolebinding read-secrets-global -n battleground
+
+# Apply secure RBAC
+kubectl apply -f episodes/ep2-rbac-misconfig/defense/secure-rbac.yaml
+```
+
+### 5.1. Verifying the Defense
+
+**Test 1: Secret Access Should Be Blocked**
+```sh
+curl -s --cacert "$CACERT" \
+  -H "Authorization: Bearer $TOKEN" \
+  "$APISERVER/api/v1/namespaces/$NAMESPACE/secrets"
+```
+
+**Expected Output:**
+```json
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "status": "Failure",
+  "message": "secrets is forbidden: User \"system:serviceaccount:battleground:default\" cannot list resource \"secrets\" in API group \"\" in the namespace \"battleground\"",
+  "reason": "Forbidden",
+  "code": 403
+}
+```
+
+**Test 2: Pod Access Should Still Work**
+```sh
+curl -s --cacert "$CACERT" \
+  -H "Authorization: Bearer $TOKEN" \
+  "$APISERVER/api/v1/namespaces/$NAMESPACE/pods"
+```
+
+**Expected Output:**
+```json
+{
+  "kind": "PodList",
+  "apiVersion": "v1",
+  "items": [
+    {
+      "metadata": {
+        "name": "demo-app-...",
+        "namespace": "battleground"
+      }
+    }
+  ]
+}
 ```
 
