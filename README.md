@@ -10,25 +10,17 @@ This repository contains the **lab scenarios** accompanying the blog/post series
 
 ## Content
 
-We are currently focusing on:
-
 1. **[Ep1 – I've Landed in a Pod](episodes/ep1-landed-in-a-pod/README.md)**: Env vars, ServiceAccount token, basic API discovery.
 2. **[Ep2 – The RBAC Mistake](episodes/ep2-rbac-misconfig/README.md)**: Exploiting overly permissive Roles to steal Secrets.
-3. **[Ep3 – Breakout (Container Escape)](episodes/ep3-container-escape/README.md)**: Abusing `privileged` contexts, `hostPath` mounts, and `CAP_SYS_ADMIN` to escape to the host Node.
-
-**Upcoming Advanced Scenarios:**
-
-4. **Ep4 – Node Domination**: Post-exploitation on the Node. Stealing Kubelet credentials, accessing host filesystem, and persistence via Static Pods (since Cron/SSH are often missing).
-5. **Ep5 – The HostNetwork Highway**: Abusing `hostNetwork: true` to bypass NetworkPolicies, sniff traffic, and access localhost services (Kubelet API).
-6. **Ep6 – Cloud Lateral Movement**: Abusing Cloud Metadata (IMDS) to steal IAM credentials and pivot from Kubernetes to the Cloud Provider (AWS/GCP).
-7. **Ep7 – Silent Persistence**: Backdooring Admission Controllers or mutating webhooks to inject sidecars silently.
+3. **[Ep3 – Breakout (Container Escape)](episodes/ep3-container-escape/README.md)**: Abusing `privileged` contexts and `hostPID` to escape to the host Node.
+4. **[Ep4 – Node Domination](episodes/ep4-node-domination/README.md)**: Post-exploitation on the Node. Stealing Kubelet credentials, accessing host filesystem, and persistence via Static Pods.
 
 ## Prerequisites
 
 - A Kubernetes environment (local setup recommended):
-  - [kind](https://kind.sigs.k8s.io/)
+  - [k3s](https://k3s.io/) ✅ Recommended (NetworkPolicy support out of the box)
+  - or [kind](https://kind.sigs.k8s.io/)
   - or [minikube](https://minikube.sigs.k8s.io/docs/)
-  - or [k3d](https://k3d.io/)
 - `kubectl` installed and connected to the cluster
 - Familiarity with basic Linux and bash commands
 
